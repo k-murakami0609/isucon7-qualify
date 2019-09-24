@@ -27,3 +27,15 @@ mysql:
 
 save:
 	sh save.sh
+
+cpu:
+	curl -s http://localhost:6060/debug/pprof/profile > /tmp/cpu.pprof
+
+heap
+	curl -s http://localhost:6060/debug/pprof/heap > /tmp/heap.pprof
+
+cprofile:
+	go tool pprof isubata /tmp/cpu.pprof
+
+hprofile:
+	go tool pprof isubata /tmp/heap.pprof
