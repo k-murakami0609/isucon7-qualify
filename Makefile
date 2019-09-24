@@ -24,3 +24,6 @@ nginx:
 
 mysql:
 	sudo systemctl restart mysql.service
+
+save:
+	sh save.sh
