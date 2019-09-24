@@ -31,7 +31,7 @@ save:
 cpu:
 	curl -s http://localhost:6060/debug/pprof/profile > /tmp/cpu.pprof
 
-heap
+heap:
 	curl -s http://localhost:6060/debug/pprof/heap > /tmp/heap.pprof
 
 cprofile:
