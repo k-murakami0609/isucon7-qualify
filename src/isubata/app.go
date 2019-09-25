@@ -34,7 +34,7 @@ type Response struct {
 
 func bodyDumpHandler(c echo.Context, reqBody, resBody []byte) {
 	log.Printf("Request Body: %v\n", string(reqBody))
-	log.Printf("Response Body: %v\n", string(resBody))
+	// log.Printf("Response Body: %v\n", string(resBody))
 }
 
 const (
