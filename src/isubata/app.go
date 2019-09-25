@@ -480,13 +480,15 @@ func fetchUnread(c echo.Context) error {
 		lastID := havereads[chID]
 
 		var cnt int64
-		if lastID > 0 {
-			err = db.Get(&cnt,
-				"SELECT COUNT(*) as cnt FROM message WHERE channel_id = ? AND ? < id",
-				chID, lastID)
-		} else {
+		if lastID <= 0 {
 			noReadIds = append(noReadIds, chID)
+			continue
 		}
+
+		err = db.Get(&cnt,
+			"SELECT COUNT(*) as cnt FROM message WHERE channel_id = ? AND ? < id",
+			chID, lastID)
+
 		if err != nil {
 			return err
 		}
