@@ -127,8 +127,8 @@ type MessageWithUser struct {
 	AvatarIcon  string    `json:"avatar_icon" db:"avatar_icon"`
 }
 
-func queryMessagesWithUser(chanID, lastID int64) ([]Message, error) {
-	msgs := []Message{}
+func queryMessagesWithUser(chanID, lastID int64) ([]MessageWithUser, error) {
+	msgs := []MessageWithUser{}
 	err := db.Select(&msgs, "SELECT message.*, user.name, user.display_name, user.avatar_icon FROM message JOIN user ON user.id = message.user_id WHERE message.id > ? AND channel_id = ? ORDER BY message.id DESC LIMIT 100",
 		lastID, chanID)
 	return msgs, err
@@ -386,7 +386,7 @@ func jsonifyMessage(m Message) (map[string]interface{}, error) {
 	return r, nil
 }
 
-func jsonifyMessageWithUser(m Message) (map[string]interface{}, error) {
+func jsonifyMessageWithUser(m MessageWithUser) (map[string]interface{}, error) {
 	r := make(map[string]interface{})
 	r["id"] = m.ID
 	r["user"] = m
