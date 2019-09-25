@@ -664,7 +664,7 @@ func postProfile(c echo.Context) error {
 	}
 
 	if avatarName != "" && len(avatarData) > 0 {
-		_, err := db.Exec("INSERT INTO image (name, data) VALUES (?, ?)", avatarName, avatarData)
+		_, err := db.Exec("INSERT INTO image (name) VALUES (?)", avatarName, avatarData)
 		if err != nil {
 			return err
 		}
@@ -672,6 +672,10 @@ func postProfile(c echo.Context) error {
 		if err != nil {
 			return err
 		}
+
+		base := []byte("/home/isucon/isubata/icons/")
+		base = append(base, avatarName...)
+		err = ioutil.WriteFile(string(base), avatarData, 0644)
 	}
 
 	if name := c.FormValue("display_name"); name != "" {
