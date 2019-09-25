@@ -32,10 +32,10 @@ type Response struct {
 	Message string
 }
 
-func bodyDumpHandler(c echo.Context, reqBody, resBody []byte) {
-	log.Printf("Request Body: %v\n", string(reqBody))
-	// log.Printf("Response Body: %v\n", string(resBody))
-}
+// func bodyDumpHandler(c echo.Context, reqBody, resBody []byte) {
+// 	log.Printf("Request Body: %v\n", string(reqBody))
+// 	// log.Printf("Response Body: %v\n", string(resBody))
+// }
 
 const (
 	avatarMaxBytes = 1 * 1024 * 1024
@@ -792,7 +792,7 @@ func main() {
 	}()
 
 	e := echo.New()
-	e.Use(middleware.BodyDump(bodyDumpHandler))
+	// e.Use(middleware.BodyDump(bodyDumpHandler))
 
 	funcs := template.FuncMap{
 		"add":    tAdd,
