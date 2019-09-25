@@ -475,6 +475,7 @@ func fetchUnread(c echo.Context) error {
 	}
 
 	resp := []map[string]interface{}{}
+	noReadIds := []int64{}
 	for _, chID := range channels {
 		lastID := havereads[chID]
 
@@ -484,9 +485,7 @@ func fetchUnread(c echo.Context) error {
 				"SELECT COUNT(*) as cnt FROM message WHERE channel_id = ? AND ? < id",
 				chID, lastID)
 		} else {
-			err = db.Get(&cnt,
-				"SELECT COUNT(*) as cnt FROM message WHERE channel_id = ?",
-				chID)
+			noReadIds = append(noReadIds, chID)
 		}
 		if err != nil {
 			return err
@@ -495,6 +494,35 @@ func fetchUnread(c echo.Context) error {
 			"channel_id": chID,
 			"unread":     cnt}
 		resp = append(resp, r)
+	}
+
+	if len(noReadIds) > 0 {
+		arg := map[string]interface{}{
+			"channel_ids": noReadIds,
+		}
+		query, args, err := sqlx.Named("SELECT channel_id, COUNT(*) as cnt FROM message WHERE channel_id IN (:channel_ids)", arg)
+		if err != nil {
+			return err
+		}
+		query, args, err = sqlx.In(query, args...)
+		if err != nil {
+			return err
+		}
+		query = db.Rebind(query)
+
+		type MessageCnt struct {
+			ChannelID int64 `db:"channel_id"`
+			Cnt       int64 `db:"cnt"`
+		}
+		cnts := []MessageCnt{}
+		err = db.Select(&cnts, query, args...)
+
+		for _, cnt := range cnts {
+			r := map[string]interface{}{
+				"channel_id": cnt.ChannelID,
+				"unread":     cnt.Cnt}
+			resp = append(resp, r)
+		}
 	}
 
 	return c.JSON(http.StatusOK, resp)
