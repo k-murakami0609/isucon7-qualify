@@ -417,7 +417,7 @@ func queryChannels() ([]int64, error) {
 	return res, err
 }
 
-func queryHaveRead(userID, chID int64) (int64, error) {
+func queryHaveReads(userID int64, chIDs []int64) (map[int64]int64, error) {
 	type HaveRead struct {
 		UserID    int64     `db:"user_id"`
 		ChannelID int64     `db:"channel_id"`
@@ -425,17 +425,35 @@ func queryHaveRead(userID, chID int64) (int64, error) {
 		UpdatedAt time.Time `db:"updated_at"`
 		CreatedAt time.Time `db:"created_at"`
 	}
-	h := HaveRead{}
+	h := []HaveRead{}
 
-	err := db.Get(&h, "SELECT * FROM haveread WHERE user_id = ? AND channel_id = ?",
-		userID, chID)
-
-	if err == sql.ErrNoRows {
-		return 0, nil
-	} else if err != nil {
-		return 0, err
+	arg := map[string]interface{}{
+		"user_id":     userID,
+		"channel_ids": chIDs,
 	}
-	return h.MessageID, nil
+	query, args, err := sqlx.Named("SELECT * FROM haveread WHERE user_id = :user_id AND channel_id IN (:channel_ids)", arg)
+	if err != nil {
+		return nil, err
+	}
+	query, args, err = sqlx.In(query, args...)
+	if err != nil {
+		return nil, err
+	}
+	query = db.Rebind(query)
+	err = db.Select(&h, query, args...)
+
+	res := map[int64]int64{}
+	if err == sql.ErrNoRows {
+		return res, nil
+	} else if err != nil {
+		return nil, err
+	} else {
+		for _, item := range h {
+			res[item.ChannelID] = item.MessageID
+		}
+
+		return res, nil
+	}
 }
 
 func fetchUnread(c echo.Context) error {
@@ -451,13 +469,14 @@ func fetchUnread(c echo.Context) error {
 		return err
 	}
 
-	resp := []map[string]interface{}{}
+	havereads, err := queryHaveReads(userID, channels)
+	if err != nil {
+		return err
+	}
 
+	resp := []map[string]interface{}{}
 	for _, chID := range channels {
-		lastID, err := queryHaveRead(userID, chID)
-		if err != nil {
-			return err
-		}
+		lastID := havereads[chID]
 
 		var cnt int64
 		if lastID > 0 {
