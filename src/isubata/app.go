@@ -116,6 +116,24 @@ func addMessage(channelID, userID int64, content string) (int64, error) {
 	return res.LastInsertId()
 }
 
+type MessageWithUser struct {
+	ID          int64     `json:"-" db:"id"`
+	ChannelID   int64     `json:"-" db:"channel_id"`
+	UserID      int64     `json:"-" db:"user_id"`
+	Content     string    `json:"-" db:"content"`
+	CreatedAt   time.Time `json:"-" db:"created_at"`
+	Name        string    `json:"name" db:"name"`
+	DisplayName string    `json:"display_name" db:"display_name"`
+	AvatarIcon  string    `json:"avatar_icon" db:"avatar_icon"`
+}
+
+func queryMessagesWithUser(chanID, lastID int64) ([]MessageWithUser, error) {
+	msgs := []MessageWithUser{}
+	err := db.Select(&msgs, "SELECT message.*, user.name, user.display_name, user.avatar_icon FROM message JOIN user ON user.id = message.user_id WHERE message.id > ? AND channel_id = ? ORDER BY message.id DESC LIMIT 100",
+		lastID, chanID)
+	return msgs, err
+}
+
 type Message struct {
 	ID        int64     `db:"id"`
 	ChannelID int64     `db:"channel_id"`
@@ -368,6 +386,15 @@ func jsonifyMessage(m Message) (map[string]interface{}, error) {
 	return r, nil
 }
 
+func jsonifyMessageWithUser(m MessageWithUser) (map[string]interface{}, error) {
+	r := make(map[string]interface{})
+	r["id"] = m.ID
+	r["user"] = m
+	r["date"] = m.CreatedAt.Format("2006/01/02 15:04:05")
+	r["content"] = m.Content
+	return r, nil
+}
+
 func getMessage(c echo.Context) error {
 	userID := sessUserID(c)
 	if userID == 0 {
@@ -383,7 +410,7 @@ func getMessage(c echo.Context) error {
 		return err
 	}
 
-	messages, err := queryMessages(chanID, lastID)
+	messages, err := queryMessagesWithUser(chanID, lastID)
 	if err != nil {
 		return err
 	}
@@ -391,7 +418,7 @@ func getMessage(c echo.Context) error {
 	response := make([]map[string]interface{}, 0)
 	for i := len(messages) - 1; i >= 0; i-- {
 		m := messages[i]
-		r, err := jsonifyMessage(m)
+		r, err := jsonifyMessageWithUser(m)
 		if err != nil {
 			return err
 		}
