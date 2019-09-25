@@ -27,6 +27,16 @@ import (
 	"github.com/labstack/echo/middleware"
 )
 
+type Response struct {
+	Status  int
+	Message string
+}
+
+func bodyDumpHandler(c echo.Context, reqBody, resBody []byte) {
+	log.Printf("Request Body: %v\n", string(reqBody))
+	log.Printf("Response Body: %v\n", string(resBody))
+}
+
 const (
 	avatarMaxBytes = 1 * 1024 * 1024
 )
@@ -782,6 +792,8 @@ func main() {
 	}()
 
 	e := echo.New()
+	e.Use(middleware.BodyDump(bodyDumpHandler))
+
 	funcs := template.FuncMap{
 		"add":    tAdd,
 		"xrange": tRange,
