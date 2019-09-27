@@ -27,6 +27,16 @@ import (
 	"github.com/labstack/echo/middleware"
 )
 
+type Response struct {
+	Status  int
+	Message string
+}
+
+// func bodyDumpHandler(c echo.Context, reqBody, resBody []byte) {
+// 	log.Printf("Request Body: %v\n", string(reqBody))
+// 	// log.Printf("Response Body: %v\n", string(resBody))
+// }
+
 const (
 	avatarMaxBytes = 1 * 1024 * 1024
 )
@@ -593,9 +603,9 @@ func getHistory(c echo.Context) error {
 		return ErrBadReqeust
 	}
 
-	messages := []Message{}
+	messages := []MessageWithUser{}
 	err = db.Select(&messages,
-		"SELECT * FROM message WHERE channel_id = ? ORDER BY id DESC LIMIT ? OFFSET ?",
+		"SELECT message.*, user.name, user.display_name, user.avatar_icon FROM message JOIN user ON user.id = message.user_id WHERE channel_id = ? ORDER BY message.id DESC LIMIT ? OFFSET ?",
 		chID, N, (page-1)*N)
 	if err != nil {
 		return err
@@ -603,7 +613,7 @@ func getHistory(c echo.Context) error {
 
 	mjson := make([]map[string]interface{}, 0)
 	for i := len(messages) - 1; i >= 0; i-- {
-		r, err := jsonifyMessage(messages[i])
+		r, err := jsonifyMessageWithUser(messages[i])
 		if err != nil {
 			return err
 		}
@@ -782,6 +792,8 @@ func main() {
 	}()
 
 	e := echo.New()
+	// e.Use(middleware.BodyDump(bodyDumpHandler))
+
 	funcs := template.FuncMap{
 		"add":    tAdd,
 		"xrange": tRange,
