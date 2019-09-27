@@ -689,12 +689,14 @@ func getAddChannel(c echo.Context) error {
 func postAddChannel(c echo.Context) error {
 	self, err := ensureLogin(c)
 	if self == nil {
+		log.Printf("fail ensure login")
 		return err
 	}
 
 	name := c.FormValue("name")
 	desc := c.FormValue("description")
 	if name == "" || desc == "" {
+		log.Printf("name: %q, desc: %q", name, desc)
 		return ErrBadReqeust
 	}
 
