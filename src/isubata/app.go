@@ -695,7 +695,7 @@ func postAddChannel(c echo.Context) error {
 
 	name := c.FormValue("name")
 	desc := c.FormValue("description")
-	if name == "" || desc == "" {
+	if name == "" {
 		log.Printf("name: %q, desc: %q", name, desc)
 		return ErrBadReqeust
 	}
